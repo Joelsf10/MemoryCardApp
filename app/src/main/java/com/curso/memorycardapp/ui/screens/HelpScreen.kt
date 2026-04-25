@@ -1,14 +1,16 @@
 package com.curso.memorycardapp.ui.screens
 
-
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,33 +30,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun HelpScreen(onBack: () -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorScheme.background)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(colorScheme.background)
     ) {
+        val isLandscape = maxWidth > maxHeight
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
+                .padding(if (isLandscape) 16.dp else 24.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Título
             Text(
                 text = "Cómo Jugar",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     color = colorScheme.primary,
                     fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.padding(bottom = 8.dp)
+                )
             )
 
-            // Reglas del juego
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -70,27 +70,39 @@ fun HelpScreen(onBack: () -> Unit) {
                     RuleItem("1. Encuentra todos los pares de cartas iguales")
                     RuleItem("2. Toca una carta para voltearla")
                     RuleItem("3. Si dos cartas coinciden, permanecerán visibles")
-                    RuleItem("4. Gana al encontrar todos los pares")
+                    RuleItem("4. Si no coinciden, se voltearán de nuevo tras 1 segundo")
+                    RuleItem("5. Gana al encontrar todos los pares")
+                    RuleItem("6. Si activas el tiempo, ¡no te quedes sin segundos!")
                 }
             }
 
-            // Texto adicional opcional
+            // Sección de iconos de información
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = colorScheme.primaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Indicadores durante la partida:", fontWeight = FontWeight.Bold,
+                        color = colorScheme.onPrimaryContainer)
+                    Text("🔵 Tiempo en azul → sin límite de tiempo",
+                        style = MaterialTheme.typography.bodyMedium, color = colorScheme.onPrimaryContainer)
+                    Text("🔴 Tiempo en rojo → con límite, ¡cuenta atrás!",
+                        style = MaterialTheme.typography.bodyMedium, color = colorScheme.onPrimaryContainer)
+                    Text("Pares X/Y → pares encontrados sobre el total",
+                        style = MaterialTheme.typography.bodyMedium, color = colorScheme.onPrimaryContainer)
+                }
+            }
+
             Text(
-                text = "¡Cuantos menos errores y menos tiempo, mejor!",
+                text = "¡Cuantos menos errores y menos tiempo, mejor puntuación!",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = colorScheme.primary.copy(alpha = 0.8f)
-                ),
-                modifier = Modifier.padding(top = 8.dp)
+                )
             )
-        }
 
-        // Botón inferior
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(24.dp)
-        ) {
+            Spacer(Modifier.height(8.dp))
+
             Button(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth(),
@@ -99,10 +111,7 @@ fun HelpScreen(onBack: () -> Unit) {
                     contentColor = colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
                     text = "Entendido",
@@ -122,23 +131,23 @@ private fun RuleItem(text: String) {
     ) {
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(28.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                     shape = CircleShape
-                )
-                .padding(4.dp),
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = text.take(1), // Muestra el número de la regla
+                text = text.take(1),
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = text.substring(2), // El resto del texto
+            text = text.substring(3),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )

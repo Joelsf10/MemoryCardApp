@@ -1,19 +1,19 @@
 package com.curso.memorycardapp.ui.screens
 
-
+import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -28,30 +28,38 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.curso.memorycardapp.ui.model.GameConfiguration
-import com.curso.memorycardapp.ui.model.GameResult
-import com.curso.memorycardapp.ui.model.GameState
-import com.curso.memorycardapp.ui.model.GameStateFactory
 import com.curso.memorycardapp.R
-import kotlinx.coroutines.delay
+import com.curso.memorycardapp.ui.model.CardData
+import com.curso.memorycardapp.ui.model.GameConfiguration
+import com.curso.memorycardapp.ui.model.GameEndReason
+import com.curso.memorycardapp.ui.model.GameEvent
+import com.curso.memorycardapp.ui.model.GameResult
+import com.curso.memorycardapp.ui.model.GameViewModel
+import com.curso.memorycardapp.ui.model.GameViewModelFactory
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameScreen(
@@ -60,163 +68,217 @@ fun GameScreen(
     onBack: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val gameState: GameState = viewModel(factory = GameStateFactory(config))
-    var elapsedTime by remember { mutableStateOf(0) }
-    var showResetDialog by remember { mutableStateOf(false) }
-    var isTimerRunning by remember { mutableStateOf(true) }
+    val gameViewModel: GameViewModel = viewModel(factory = GameViewModelFactory(config))
+    val uiState by gameViewModel.uiState.collectAsState()
+    val event by gameViewModel.events.collectAsState()
 
-    // Temporizador
-    LaunchedEffect(isTimerRunning) {
-        if (isTimerRunning) {
-            while (true) {
-                delay(1000L)
-                if (!gameState.isGameComplete()) {
-                    elapsedTime++
-                } else {
-                    isTimerRunning = false
-                    onGameEnd(
-                        GameResult(
-                            playerName = config.playerName,
-                            numCardTypes = config.numCardTypes,
-                            timeSeconds = elapsedTime,
-                            errorCount = gameState.errorCount,
-                            isWinner = true
-                        )
-                    )
-                }
+    var showExitDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var gameEndFired by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(event) {
+        when (event) {
+            is GameEvent.CardAlreadyFlipped -> {
+                snackbarHostState.showSnackbar("⚠️ Esta carta ya está destapada")
+                gameViewModel.consumeEvent()
             }
+            is GameEvent.TimeLimitReached -> {
+                if (!gameEndFired) {
+                    gameEndFired = true
+                    onGameEnd(GameResult(
+                        playerName = config.playerName,
+                        numCardTypes = config.numCardTypes,
+                        timeSeconds = uiState.elapsedSeconds,
+                        errorCount = uiState.errorCount,
+                        isWinner = false,
+                        endReason = GameEndReason.TIME_UP,
+                        timeLimitSeconds = config.timeLimit
+                    ))
+                }
+                gameViewModel.consumeEvent()
+            }
+            null -> Unit
         }
     }
 
+    LaunchedEffect(uiState.isGameComplete) {
+        if (uiState.isGameComplete && !gameEndFired) {
+            gameEndFired = true
+            onGameEnd(GameResult(
+                playerName = config.playerName,
+                numCardTypes = config.numCardTypes,
+                timeSeconds = uiState.elapsedSeconds,
+                errorCount = uiState.errorCount,
+                isWinner = true,
+                endReason = GameEndReason.WON,
+                timeLimitSeconds = config.timeLimit
+            ))
+        }
+    }
+
+    val timerColor = if (uiState.hasTimeLimit) Color(0xFFFFCC02) else colorScheme.onPrimary
+    val timerText = if (uiState.hasTimeLimit) {
+        "⏱ ${uiState.timeRemaining ?: 0}s"
+    } else {
+        formatElapsed(uiState.elapsedSeconds)
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        config.playerName,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+                    Column {
+                        Text(
+                            text = config.playerName,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onPrimary
+                            )
+                        )
+                        Text(
+                            text = "Pares: ${uiState.matchedPairs}/${uiState.totalPairs}  ·  Errores: ${uiState.errorCount}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = colorScheme.onPrimary.copy(alpha = 0.75f)
+                            )
+                        )
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { showResetDialog = true }) {
-                        Text("←", style = MaterialTheme.typography.headlineSmall)
+                    IconButton(onClick = { showExitDialog = true }) {
+                        Text(
+                            text = "←",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                color = colorScheme.onPrimary
+                            )
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.surface,
-                    titleContentColor = colorScheme.primary
+                    containerColor = colorScheme.primary
                 ),
                 actions = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                        modifier = Modifier.padding(end = 16.dp)
                     ) {
                         Text(
-                            text = "${elapsedTime}s",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                        )
-                        Text(
-                            text = "Errores: ${gameState.errorCount}",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            text = timerText,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = timerColor
+                            )
                         )
                     }
                 }
             )
         }
     ) { padding ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center // Centramos todo el contenido
+                .background(colorScheme.surfaceVariant)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(), // Solo ocupa el alto necesario
-                horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
-                verticalArrangement = Arrangement.Center // Centrado vertical
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(gameState.gridColumns),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .widthIn(max = 500.dp) // Ancho máximo para no expandirse demasiado
-                ) {
-                    itemsIndexed(gameState.cards) { index, card ->
-                        Card(
-                            modifier = Modifier
-                                .aspectRatio(0.75f)
-                                .padding(4.dp) // Espacio entre cartas
-                                .clickable(enabled = gameState.isClickEnabled) {
-                                    gameState.flipCard(index)
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                // Parte IMPORTANTE: Mantenemos exactamente la misma lógica de visualización de cartas
-                                if (card.isFaceUp || card.isMatched) {
-                                    Image(
-                                        painter = painterResource(card.imageRes),
-                                        contentDescription = "Carta ${index + 1}",
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Image(
-                                        painter = painterResource(R.drawable.back), // Asegúrate de tener este recurso
-                                        contentDescription = "Dorso de carta",
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
+            val isLandscape = maxWidth > maxHeight
+            val columns = if (isLandscape) uiState.gridColumns + 2 else uiState.gridColumns
+            val gridPadding = if (isLandscape) 4.dp else 10.dp
+            val cardPadding = if (isLandscape) 2.dp else 4.dp
+            val cardAspect = if (isLandscape) 0.65f else 0.75f
 
-                                if (card.isMatched) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.3f))
-                                    )
-                                }
-                            }
-                        }
-                    }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columns),
+                modifier = Modifier.fillMaxSize().padding(gridPadding),
+                verticalArrangement = Arrangement.spacedBy(cardPadding),
+                horizontalArrangement = Arrangement.spacedBy(cardPadding)
+            ) {
+                itemsIndexed(uiState.cards) { index, card ->
+                    FlippableCard(
+                        card = card,
+                        aspectRatio = cardAspect,
+                        onClick = { gameViewModel.flipCard(index) },
+                        enabled = uiState.isClickEnabled
+                    )
                 }
             }
         }
 
-        if (showResetDialog) {
+        if (showExitDialog) {
             AlertDialog(
-                onDismissRequest = { showResetDialog = false },
+                onDismissRequest = { showExitDialog = false },
                 shape = RoundedCornerShape(16.dp),
-                title = {
-                    Text("¿Salir de la partida?")
-                },
-                text = {
-                    Text("Perderás tu progreso actual")
-                },
+                title = { Text("¿Salir de la partida?") },
+                text = { Text("Perderás el progreso actual.") },
                 confirmButton = {
                     Button(
-                        onClick = {
-                            showResetDialog = false
-                            onBack()
-                        },
+                        onClick = { showExitDialog = false; onBack() },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colorScheme.errorContainer,
                             contentColor = colorScheme.onErrorContainer
                         )
-                    ) {
-                        Text("Salir")
-                    }
+                    ) { Text("Salir") }
                 },
                 dismissButton = {
-                    OutlinedButton(
-                        onClick = { showResetDialog = false }
-                    ) {
-                        Text("Cancelar")
-                    }
+                    OutlinedButton(onClick = { showExitDialog = false }) { Text("Cancelar") }
                 }
             )
         }
     }
 }
+
+@Composable
+private fun FlippableCard(
+    card: CardData,
+    aspectRatio: Float,
+    onClick: () -> Unit,
+    enabled: Boolean
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (card.isFaceUp || card.isMatched) 180f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "card_flip"
+    )
+
+    Card(
+        modifier = Modifier
+            .aspectRatio(aspectRatio)
+            .graphicsLayer {
+                rotationY = rotation
+                cameraDistance = 12f * density
+            }
+            .clickable(enabled = enabled) { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (rotation > 90f) {
+                Image(
+                    painter = painterResource(card.imageRes),
+                    contentDescription = "Carta",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationY = 180f }
+                )
+                if (card.isMatched) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0x5500C853))
+                    )
+                }
+            } else {
+                Image(
+                    painter = painterResource(R.drawable.back),
+                    contentDescription = "Dorso",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+private fun formatElapsed(seconds: Int): String =
+    "%02d:%02d".format(seconds / 60, seconds % 60)
