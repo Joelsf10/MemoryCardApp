@@ -48,7 +48,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
+import com.curso.memorycardapp.data.db.MemoryCardDatabase
+import com.curso.memorycardapp.data.repository.Repository
 import com.curso.memorycardapp.ui.model.GameEndReason
+import kotlinx.coroutines.launch
 import com.curso.memorycardapp.ui.model.GameResult
 import com.curso.memorycardapp.ui.utils.showToast
 
@@ -65,6 +69,16 @@ fun ResultsScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Guardar la partida en Room automáticamente al entrar a esta pantalla
+    LaunchedEffect(Unit) {
+        scope.launch {
+            val db = MemoryCardDatabase.getInstance(context)
+            val repo = Repository(db.partidaDao())
+            repo.guardarPartida(result)
+        }
+    }
 
     var editableEmail by rememberSaveable { mutableStateOf(DEFAULT_EMAIL) }
 
