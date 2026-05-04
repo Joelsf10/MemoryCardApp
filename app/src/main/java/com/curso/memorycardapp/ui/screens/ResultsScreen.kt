@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.rememberCoroutineScope
 import com.curso.memorycardapp.data.db.MemoryCardDatabase
 import com.curso.memorycardapp.data.repository.Repository
@@ -65,7 +66,8 @@ fun ResultsScreen(
     result: GameResult,
     onRestart: () -> Unit,
     onExit: () -> Unit,
-    onQuit: () -> Unit
+    onQuit: () -> Unit,
+    onPreferences: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -107,6 +109,11 @@ fun ResultsScreen(
                             color = Color.White
                         )
                     )
+                },
+                actions = {
+                    androidx.compose.material3.IconButton(onClick = onPreferences) {
+                        Text("⚙️", fontSize = 22.sp)
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = topBarColor)
             )

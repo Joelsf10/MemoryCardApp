@@ -46,14 +46,15 @@ import com.curso.memorycardapp.ui.model.GameConfiguration
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfigurationScreen(
+    initialConfig: GameConfiguration = GameConfiguration(),
     onStart: (GameConfiguration) -> Unit,
     onBack: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    var playerName by remember { mutableStateOf("") }
-    var numCardTypes by remember { mutableStateOf(GameConfiguration.DEFAULT_NUM_CARD_TYPES) }
-    var timeLimitEnabled by remember { mutableStateOf(false) }
-    var timeLimitText by remember { mutableStateOf("60") }
+    var playerName by remember(initialConfig) { mutableStateOf(initialConfig.playerName) }
+    var numCardTypes by remember(initialConfig) { mutableStateOf(initialConfig.numCardTypes) }
+    var timeLimitEnabled by remember(initialConfig) { mutableStateOf(initialConfig.timeLimit != null) }
+    var timeLimitText by remember(initialConfig) { mutableStateOf((initialConfig.timeLimit ?: 60).toString()) }
 
     val gridLabel = if (numCardTypes <= 6) "4×4 (16 cartas)" else "5×4 (20 cartas)"
     val timeLimitValue = timeLimitText.toIntOrNull()?.takeIf { it > 0 }

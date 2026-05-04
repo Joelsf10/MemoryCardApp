@@ -12,14 +12,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,96 +35,133 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
     onPlay: () -> Unit,
     onHelp: () -> Unit,
+    onHistory: () -> Unit,
+    onPreferences: () -> Unit,
     onExit: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val buttonShape = RoundedCornerShape(14.dp)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        colorScheme.primaryContainer,
-                        colorScheme.background
-                    ),
-                    startY = 0f,
-                    endY = 900f
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                actions = {
+                    // Icono de preferencias en la TopAppBar
+                    IconButton(onClick = onPreferences) {
+                        Text(
+                            text = "⚙️",
+                            fontSize = 22.sp
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorScheme.primaryContainer
                 )
             )
-    ) {
-        Column(
+        }
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Logo
-            AppLogo()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Memory Card",
-                style = MaterialTheme.typography.displaySmall.copy(
-                    color = colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                .padding(padding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            colorScheme.primaryContainer,
+                            colorScheme.background
+                        ),
+                        startY = 0f,
+                        endY = 900f
+                    )
                 )
-            )
-            Text(
-                text = "Encuentra todos los pares",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.padding(bottom = 48.dp, top = 6.dp)
-            )
-
-            Button(
-                onClick = onPlay,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary
-                ),
-                shape = buttonShape,
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Nueva partida", style = MaterialTheme.typography.titleMedium)
-            }
+                AppLogo()
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedButton(
-                onClick = onHelp,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = colorScheme.primary
-                ),
-                border = BorderStroke(1.5.dp, colorScheme.primary),
-                shape = buttonShape
-            ) {
-                Text("Cómo jugar", style = MaterialTheme.typography.titleMedium)
-            }
+                Text(
+                    text = "Memory Card",
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        color = colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Text(
+                    text = "Encuentra todos los pares",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = colorScheme.onSurfaceVariant
+                    ),
+                    modifier = Modifier.padding(bottom = 48.dp, top = 6.dp)
+                )
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onPlay,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorScheme.primary,
+                        contentColor = colorScheme.onPrimary
+                    ),
+                    shape = buttonShape,
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Text("Nueva partida", style = MaterialTheme.typography.titleMedium)
+                }
 
-            OutlinedButton(
-                onClick = onExit,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = colorScheme.error
-                ),
-                border = BorderStroke(1.5.dp, colorScheme.error),
-                shape = buttonShape
-            ) {
-                Text("Salir", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = onHistory,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.primary
+                    ),
+                    border = BorderStroke(1.5.dp, colorScheme.primary),
+                    shape = buttonShape
+                ) {
+                    Text("Consultar partidas", style = MaterialTheme.typography.titleMedium)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = onHelp,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.primary
+                    ),
+                    border = BorderStroke(1.5.dp, colorScheme.primary),
+                    shape = buttonShape
+                ) {
+                    Text("Cómo jugar", style = MaterialTheme.typography.titleMedium)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = onExit,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.error
+                    ),
+                    border = BorderStroke(1.5.dp, colorScheme.error),
+                    shape = buttonShape
+                ) {
+                    Text("Salir", style = MaterialTheme.typography.titleMedium)
+                }
             }
         }
     }

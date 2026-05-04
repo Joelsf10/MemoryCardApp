@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -27,7 +30,9 @@ data class GameUiState(
     val isGameComplete: Boolean = false,
     val gridColumns: Int = 4,
     val totalPairs: Int = 0,
-    val timeLimitSeconds: Int? = null   // null = sin límite de tiempo
+    val timeLimitSeconds: Int? = null,
+    // Log en tiempo real para el panel secundario de tablets
+    val logLines: List<String> = emptyList()
 ) {
     val timeRemaining: Int?
         get() = timeLimitSeconds?.let { max(0, it - elapsedSeconds) }
@@ -46,17 +51,14 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
 
     private var selectedIndices = mutableListOf<Int>()
     private var timerJob: Job? = null
+    private var turnStartTime: String = ""
+
+    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
     private val imageResources = listOf(
-        R.drawable.water,
-        R.drawable.lightning,
-        R.drawable.fire,
-        R.drawable.grass,
-        R.drawable.darkness,
-        R.drawable.doubles,
-        R.drawable.fairy,
-        R.drawable.fighting,
-        R.drawable.metal,
+        R.drawable.water, R.drawable.lightning, R.drawable.fire,
+        R.drawable.grass, R.drawable.darkness, R.drawable.doubles,
+        R.drawable.fairy, R.drawable.fighting, R.drawable.metal,
         R.drawable.psychic
     )
 
@@ -67,6 +69,8 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
     private fun calculateGridColumns(numCardTypes: Int): Int =
         if (numCardTypes <= 6) 4 else 5
 
+    private fun now(): String = timeFormat.format(Date())
+
     fun resetGame() {
         timerJob?.cancel()
         selectedIndices.clear()
@@ -76,13 +80,22 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
         val selected = imageResources.take(numPairs)
         val pairs = (selected + selected).shuffled()
 
+        // Log inicial con la información de la partida
+        val initialLog = mutableListOf(
+            "Alias: ${config.playerName}",
+            "Pares distintos: $numPairs",
+            if (config.timeLimit != null) "Control del tiempo: ${config.timeLimit}s"
+            else "Sin control del tiempo"
+        )
+
         _uiState.update {
             GameUiState(
                 cards = pairs.mapIndexed { idx, res -> CardData(idx, res) },
                 gridColumns = columns,
                 totalPairs = numPairs,
                 timeLimitSeconds = config.timeLimit,
-                isClickEnabled = true
+                isClickEnabled = true,
+                logLines = initialLog
             )
         }
         startTimer()
@@ -120,6 +133,9 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
             return
         }
 
+        // Registrar inicio de tirada
+        turnStartTime = now()
+
         val newCards = state.cards.toMutableList().apply {
             this[index] = this[index].copy(isFaceUp = true)
         }
@@ -129,6 +145,7 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
         if (selectedIndices.size == 2) {
             _uiState.update { it.copy(isClickEnabled = false) }
             val (first, second) = selectedIndices
+
             if (newCards[first].imageRes == newCards[second].imageRes) {
                 val matched = newCards.toMutableList().apply {
                     this[first] = this[first].copy(isMatched = true)
@@ -136,23 +153,59 @@ class GameViewModel(private val config: GameConfiguration) : ViewModel() {
                 }
                 val newMatched = state.matchedPairs + 1
                 val complete = newMatched == state.totalPairs
+
+                // Añadir entrada al log
+                val logEntry = buildLogEntry(first, second, state, acierto = true)
+
                 _uiState.update {
-                    it.copy(cards = matched, matchedPairs = newMatched, isClickEnabled = true, isGameComplete = complete)
+                    it.copy(
+                        cards = matched,
+                        matchedPairs = newMatched,
+                        isClickEnabled = true,
+                        isGameComplete = complete,
+                        logLines = it.logLines + logEntry
+                    )
                 }
                 if (complete) timerJob?.cancel()
                 selectedIndices.clear()
             } else {
                 viewModelScope.launch {
                     delay(1000L)
+                    val endTime = now()
                     val flipped = _uiState.value.cards.toMutableList().apply {
                         this[first] = this[first].copy(isFaceUp = false)
                         this[second] = this[second].copy(isFaceUp = false)
                     }
-                    _uiState.update { it.copy(cards = flipped, errorCount = it.errorCount + 1, isClickEnabled = true) }
+                    val logEntry = buildLogEntry(first, second, state, acierto = false, endTime = endTime)
+                    _uiState.update {
+                        it.copy(
+                            cards = flipped,
+                            errorCount = it.errorCount + 1,
+                            isClickEnabled = true,
+                            logLines = it.logLines + logEntry
+                        )
+                    }
                     selectedIndices.clear()
                 }
             }
         }
+    }
+
+    private fun buildLogEntry(
+        first: Int,
+        second: Int,
+        state: GameUiState,
+        acierto: Boolean,
+        endTime: String = now()
+    ): String {
+        val sb = StringBuilder()
+        sb.appendLine("Par: (${first / state.gridColumns},${first % state.gridColumns}) - (${second / state.gridColumns},${second % state.gridColumns})")
+        sb.appendLine("Inicio: $turnStartTime  Fin: $endTime")
+        if (state.hasTimeLimit) {
+            sb.append("Tiempo restante: ${state.timeRemaining ?: 0}s")
+        }
+        sb.append(if (acierto) " ✓" else " ✗")
+        return sb.toString().trimEnd()
     }
 
     override fun onCleared() {
