@@ -1,4 +1,4 @@
-package com.curso.memorycardapp.data.preferences
+package com.curso.memorycardapp.ui.data.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore

@@ -1,9 +1,11 @@
 package com.curso.memorycardapp.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,10 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.curso.memorycardapp.R
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
@@ -52,12 +57,8 @@ fun MainMenuScreen(
             TopAppBar(
                 title = { },
                 actions = {
-                    // Icono de preferencias en la TopAppBar
                     IconButton(onClick = onPreferences) {
-                        Text(
-                            text = "⚙️",
-                            fontSize = 22.sp
-                        )
+                        Text(text = "⚙️", fontSize = 22.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -66,7 +67,8 @@ fun MainMenuScreen(
             )
         }
     ) { padding ->
-        Box(
+        // Fix 3.1: BoxWithConstraints para detectar landscape y ajustar layout
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -75,92 +77,152 @@ fun MainMenuScreen(
                         colors = listOf(
                             colorScheme.primaryContainer,
                             colorScheme.background
-                        ),
-                        startY = 0f,
-                        endY = 900f
+                        )
                     )
                 )
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AppLogo()
+            val isLandscape = maxWidth > maxHeight
 
-                Spacer(modifier = Modifier.height(16.dp))
+            if (isLandscape) {
+                // En landscape: logo + título a la izquierda, botones a la derecha
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 32.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        AppLogo()
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                color = colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Text(
+                            text = stringResource(R.string.app_subtitle),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                    // Botones en columna con scroll por si la pantalla es muy pequeña
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = onPlay,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary
+                            ),
+                            shape = buttonShape
+                        ) { Text(stringResource(R.string.menu_new_game), style = MaterialTheme.typography.titleMedium) }
 
-                Text(
-                    text = "Memory Card",
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        color = colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                        OutlinedButton(
+                            onClick = onHistory,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                            border = BorderStroke(1.5.dp, colorScheme.primary),
+                            shape = buttonShape
+                        ) { Text(stringResource(R.string.menu_history), style = MaterialTheme.typography.titleMedium) }
+
+                        OutlinedButton(
+                            onClick = onHelp,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                            border = BorderStroke(1.5.dp, colorScheme.primary),
+                            shape = buttonShape
+                        ) { Text(stringResource(R.string.menu_help), style = MaterialTheme.typography.titleMedium) }
+
+                        OutlinedButton(
+                            onClick = onExit,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.error),
+                            border = BorderStroke(1.5.dp, colorScheme.error),
+                            shape = buttonShape
+                        ) { Text(stringResource(R.string.menu_exit), style = MaterialTheme.typography.titleMedium) }
+                    }
+                }
+            } else {
+                // Portrait: columna centrada con scroll
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    AppLogo()
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            color = colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
-                )
-                Text(
-                    text = "Encuentra todos los pares",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = colorScheme.onSurfaceVariant
-                    ),
-                    modifier = Modifier.padding(bottom = 48.dp, top = 6.dp)
-                )
+                    Text(
+                        text = stringResource(R.string.app_subtitle),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.padding(bottom = 48.dp, top = 6.dp)
+                    )
 
-                Button(
-                    onClick = onPlay,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colorScheme.primary,
-                        contentColor = colorScheme.onPrimary
-                    ),
-                    shape = buttonShape,
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-                ) {
-                    Text("Nueva partida", style = MaterialTheme.typography.titleMedium)
-                }
+                    Button(
+                        onClick = onPlay,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.primary,
+                            contentColor = colorScheme.onPrimary
+                        ),
+                        shape = buttonShape,
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    ) { Text(stringResource(R.string.menu_new_game), style = MaterialTheme.typography.titleMedium) }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                OutlinedButton(
-                    onClick = onHistory,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = colorScheme.primary
-                    ),
-                    border = BorderStroke(1.5.dp, colorScheme.primary),
-                    shape = buttonShape
-                ) {
-                    Text("Consultar partidas", style = MaterialTheme.typography.titleMedium)
-                }
+                    OutlinedButton(
+                        onClick = onHistory,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                        border = BorderStroke(1.5.dp, colorScheme.primary),
+                        shape = buttonShape
+                    ) { Text(stringResource(R.string.menu_history), style = MaterialTheme.typography.titleMedium) }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                OutlinedButton(
-                    onClick = onHelp,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = colorScheme.primary
-                    ),
-                    border = BorderStroke(1.5.dp, colorScheme.primary),
-                    shape = buttonShape
-                ) {
-                    Text("Cómo jugar", style = MaterialTheme.typography.titleMedium)
-                }
+                    OutlinedButton(
+                        onClick = onHelp,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary),
+                        border = BorderStroke(1.5.dp, colorScheme.primary),
+                        shape = buttonShape
+                    ) { Text(stringResource(R.string.menu_help), style = MaterialTheme.typography.titleMedium) }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                OutlinedButton(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = colorScheme.error
-                    ),
-                    border = BorderStroke(1.5.dp, colorScheme.error),
-                    shape = buttonShape
-                ) {
-                    Text("Salir", style = MaterialTheme.typography.titleMedium)
+                    OutlinedButton(
+                        onClick = onExit,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.error),
+                        border = BorderStroke(1.5.dp, colorScheme.error),
+                        shape = buttonShape
+                    ) { Text(stringResource(R.string.menu_exit), style = MaterialTheme.typography.titleMedium) }
                 }
             }
         }

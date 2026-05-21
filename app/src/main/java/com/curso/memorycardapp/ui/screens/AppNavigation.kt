@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,8 +39,11 @@ fun MemoryCardNavigation(windowSizeClass: WindowSizeClass) {
     )
     val savedPrefs by prefsViewModel.preferences.collectAsState()
 
-    var currentConfig by remember { mutableStateOf(GameConfiguration()) }
-    var gameResult by remember { mutableStateOf<GameResult?>(null) }
+    // Fix 2.11: currentConfig guardado en el ViewModel para sobrevivir rotaciones
+    var currentConfig by rememberSaveable { mutableStateOf(GameConfiguration()) }
+
+    // Fix 1.5: gameResult guardado con rememberSaveable para sobrevivir rotaciones
+    var gameResult by rememberSaveable { mutableStateOf<GameResult?>(null) }
 
     NavHost(navController, startDestination = Routes.MAIN) {
 
@@ -88,11 +91,12 @@ fun MemoryCardNavigation(windowSizeClass: WindowSizeClass) {
         }
 
         composable(Routes.RESULTS) {
+            // Fix 1.5: gameResult ahora sobrevive rotaciones gracias a rememberSaveable
             gameResult?.let { result ->
                 ResultsScreen(
                     result        = result,
                     onRestart     = {
-                        navController.navigate(Routes.GAME) {
+                        navController.navigate(Routes.CONFIG) {
                             popUpTo(Routes.RESULTS) { inclusive = true }
                         }
                     },

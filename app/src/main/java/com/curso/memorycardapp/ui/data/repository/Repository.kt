@@ -1,6 +1,6 @@
-package com.curso.memorycardapp.data.repository
+package com.curso.memorycardapp.ui.data.repository
 
-import com.curso.memorycardapp.data.db.PartidaDao
+import com.curso.memorycardapp.ui.data.db.PartidaDao
 import com.curso.memorycardapp.ui.data.db.PartidaEntity
 import com.curso.memorycardapp.ui.model.GameEndReason
 import com.curso.memorycardapp.ui.model.GameResult

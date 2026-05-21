@@ -1,10 +1,9 @@
-package com.curso.memorycardapp.data.db
+package com.curso.memorycardapp.ui.data.db
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.curso.memorycardapp.ui.data.db.PartidaEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

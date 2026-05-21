@@ -1,10 +1,9 @@
-package com.curso.memorycardapp.data.db
+package com.curso.memorycardapp.ui.data.db
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.curso.memorycardapp.ui.data.db.PartidaEntity
 
 @Database(
     entities = [PartidaEntity::class],

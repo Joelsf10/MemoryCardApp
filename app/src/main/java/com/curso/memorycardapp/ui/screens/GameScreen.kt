@@ -218,7 +218,8 @@ fun GameScreen(
     }
 }
 
-// Layout de tablet: cuadrícula a la izquierda, log a la derecha
+// Layout de tablet: bi-panel adaptado a orientación (fix 3.7)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun TabletGameLayout(
     uiState: com.curso.memorycardapp.ui.model.GameUiState,
@@ -229,73 +230,80 @@ private fun TabletGameLayout(
     val logListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    // Auto-scroll al final cuando hay nuevas entradas de log
     LaunchedEffect(uiState.logLines.size) {
         if (uiState.logLines.isNotEmpty()) {
-            scope.launch {
-                logListState.animateScrollToItem(uiState.logLines.size - 1)
-            }
+            scope.launch { logListState.animateScrollToItem(uiState.logLines.size - 1) }
         }
     }
 
-    Row(modifier = modifier) {
-        // Panel principal: cuadrícula del juego
-        Box(
-            modifier = Modifier
-                .weight(1.5f)
-                .fillMaxHeight()
-                .background(colorScheme.surfaceVariant)
-                .padding(8.dp)
-        ) {
-            CardGrid(
-                uiState = uiState,
-                columns = uiState.gridColumns,
-                cardAspect = 0.75f,
-                onCardClick = onCardClick
-            )
-        }
+    // Fix 3.7: en portrait tablet Column, en landscape tablet Row
+    BoxWithConstraints(modifier = modifier) {
+        val isLandscape = maxWidth > maxHeight
 
-        Divider(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(1.dp),
-            color = colorScheme.outline.copy(alpha = 0.3f)
-        )
-
-        // Panel secundario: log en tiempo real
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(colorScheme.surface)
-                .padding(12.dp)
-        ) {
-            Text(
-                text = "LOG…",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.primary
-                ),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            LazyColumn(
-                state = logListState,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.logLines) { line ->
-                    Text(
-                        text = line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colorScheme.onSurface
-                    )
-                    Divider(color = colorScheme.outline.copy(alpha = 0.2f))
+        if (isLandscape) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1.5f).fillMaxHeight()
+                        .background(colorScheme.surfaceVariant).padding(8.dp)
+                ) {
+                    CardGrid(uiState = uiState, columns = uiState.gridColumns,
+                        cardAspect = 0.75f, onCardClick = onCardClick)
+                }
+                Divider(modifier = Modifier.fillMaxHeight().width(1.dp),
+                    color = colorScheme.outline.copy(alpha = 0.3f))
+                Column(
+                    modifier = Modifier
+                        .weight(1f).fillMaxHeight()
+                        .background(colorScheme.surface).padding(12.dp)
+                ) {
+                    Text("LOG…", style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold, color = colorScheme.primary),
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    LazyColumn(state = logListState,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(uiState.logLines) { line ->
+                            Text(line, style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurface)
+                            Divider(color = colorScheme.outline.copy(alpha = 0.2f))
+                        }
+                    }
+                }
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1.5f).fillMaxWidth()
+                        .background(colorScheme.surfaceVariant).padding(8.dp)
+                ) {
+                    CardGrid(uiState = uiState, columns = uiState.gridColumns,
+                        cardAspect = 0.75f, onCardClick = onCardClick)
+                }
+                Divider(color = colorScheme.outline.copy(alpha = 0.3f))
+                Column(
+                    modifier = Modifier
+                        .weight(1f).fillMaxWidth()
+                        .background(colorScheme.surface).padding(12.dp)
+                ) {
+                    Text("LOG…", style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold, color = colorScheme.primary),
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    LazyColumn(state = logListState,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(uiState.logLines) { line ->
+                            Text(line, style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurface)
+                            Divider(color = colorScheme.outline.copy(alpha = 0.2f))
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-// Layout de smartphone
+// Layout de smartphone: solo cuadrícula adaptada a orientación
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun SmartphoneGameLayout(

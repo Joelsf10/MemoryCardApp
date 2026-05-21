@@ -36,8 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.curso.memorycardapp.data.db.MemoryCardDatabase
-import com.curso.memorycardapp.data.repository.Repository
+import com.curso.memorycardapp.ui.data.db.MemoryCardDatabase
+import com.curso.memorycardapp.ui.data.repository.Repository
 import com.curso.memorycardapp.ui.data.db.PartidaEntity
 import com.curso.memorycardapp.ui.model.HistorialViewModel
 import com.curso.memorycardapp.ui.model.HistorialViewModelFactory

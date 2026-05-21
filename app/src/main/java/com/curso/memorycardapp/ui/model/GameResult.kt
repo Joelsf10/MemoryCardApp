@@ -1,11 +1,17 @@
 package com.curso.memorycardapp.ui.model
 
+import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-enum class GameEndReason { WON, TIME_UP }
+enum class GameEndReason : Serializable { WON, TIME_UP }
 
+/**
+ * Resultado de una partida.
+ * Implementa Serializable para poder guardarse con rememberSaveable
+ * y sobrevivir rotaciones de pantalla (fix 1.5).
+ */
 data class GameResult(
     val playerName: String,
     val numCardTypes: Int,
@@ -13,9 +19,10 @@ data class GameResult(
     val errorCount: Int,
     val isWinner: Boolean,
     val endReason: GameEndReason = if (isWinner) GameEndReason.WON else GameEndReason.TIME_UP,
-    val timeLimitSeconds: Int? = null,           // null = sin límite
+    val timeLimitSeconds: Int? = null,
     val finishedAt: String = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-) {
+) : Serializable {
+
     val timeRemaining: Int?
         get() = timeLimitSeconds?.let { it - timeSeconds }
 

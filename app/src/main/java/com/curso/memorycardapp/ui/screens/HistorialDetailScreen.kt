@@ -32,8 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.curso.memorycardapp.data.db.MemoryCardDatabase
-import com.curso.memorycardapp.data.repository.Repository
+import com.curso.memorycardapp.ui.data.db.MemoryCardDatabase
+import com.curso.memorycardapp.ui.data.repository.Repository
 import com.curso.memorycardapp.ui.data.db.PartidaEntity
 
 @OptIn(ExperimentalMaterial3Api::class)

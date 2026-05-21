@@ -50,8 +50,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.rememberCoroutineScope
-import com.curso.memorycardapp.data.db.MemoryCardDatabase
-import com.curso.memorycardapp.data.repository.Repository
+import com.curso.memorycardapp.ui.data.db.MemoryCardDatabase
+import com.curso.memorycardapp.ui.data.repository.Repository
 import com.curso.memorycardapp.ui.model.GameEndReason
 import kotlinx.coroutines.launch
 import com.curso.memorycardapp.ui.model.GameResult

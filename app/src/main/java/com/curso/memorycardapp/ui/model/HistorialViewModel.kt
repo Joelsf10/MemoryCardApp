@@ -3,7 +3,7 @@ package com.curso.memorycardapp.ui.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.curso.memorycardapp.data.repository.Repository
+import com.curso.memorycardapp.ui.data.repository.Repository
 import com.curso.memorycardapp.ui.data.db.PartidaEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
